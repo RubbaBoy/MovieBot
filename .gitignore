@@ -3,11 +3,11 @@
 output/
 out/
 build/
-
-# The following is an image from the bee movie, idk if it's legal to have it on here
-movie.png
+gradle/
+.gradle/
+gradlew*
 
 videos/
-# Project exclude paths
-/.gradle/
-/genned/
+genned/
+gifs/
+*.log

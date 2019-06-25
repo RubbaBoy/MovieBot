@@ -35,7 +35,6 @@ public class GifSequenceWriter implements AutoCloseable {
         graphicsControlExtensionNode.setAttribute("disposalMethod", "none");
         graphicsControlExtensionNode.setAttribute("userInputFlag", "FALSE");
         graphicsControlExtensionNode.setAttribute("transparentColorFlag", "FALSE");
-//        graphicsControlExtensionNode.setAttribute("delayTime", "" + delay);
         graphicsControlExtensionNode.setAttribute("delayTime", Integer.toString(delay / 10));
         graphicsControlExtensionNode.setAttribute("transparentColorIndex", "0");
 

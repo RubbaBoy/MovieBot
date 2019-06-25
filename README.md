@@ -1,5 +1,12 @@
 # Discord Emoji Movie
 
-Meh, I'll work on this stuff later
+Allows for the emoji-rendering of movies to be played within Discord.
+Movie specs are:
+- 16:9 aspect ratio
+- 16x9 emoji (144 total)
+- Spread across 3 Discord messages
 
-This isn't quite collaborator-ready, there's still a lot of POC code and some hardcoded stuff
+Proof of concept screenshot:
+![POC](https://rubbaboy.me/images/mh57px8)
+
+More features to come soon, made by Adam, Allen, and Jacob
