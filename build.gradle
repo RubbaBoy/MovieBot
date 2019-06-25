@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group 'com.uddernetworks.emoji'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // For video decoding
+//    compile 'org.jcodec:jcodec:0.2.3'
+//    compile 'org.jcodec:jcodec-javase:0.2.3'
+
+    compile 'net.bramp.ffmpeg:ffmpeg:0.6.2'
+
+    // For logging
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
+}
