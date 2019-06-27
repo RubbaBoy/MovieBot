@@ -8,6 +8,7 @@ version '1.0-SNAPSHOT'
 sourceCompatibility = 11
 
 repositories {
+    jcenter()
     mavenCentral()
     maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots'
@@ -25,4 +26,7 @@ dependencies {
     // For logging
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
+
+    // Discord Bot
+    compile group: 'net.dv8tion', name: 'JDA', version: '3.8.3_462'
 }
