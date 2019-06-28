@@ -45,6 +45,10 @@ public class FFmpegManager {
         return foundMpeg.get(0);
     }
 
+    public String getProperty(String property, File video) throws IOException {
+        return runCommand("ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=" + property + " " + video.getAbsolutePath());
+    }
+
     private List<File> findFileParent(String file) throws IOException {
         return Arrays.stream(runCommand("where " + file).split("\\r?\\n")).map(File::new).map(File::getParentFile).collect(Collectors.toList());
     }

@@ -8,48 +8,115 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.uddernetworks.emoji.ffmpeg.FFmpegManager;
+import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.managers.AudioManager;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-public class AudioPlayer {
+public class AudioPlayer extends ListenerAdapter {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(AudioPlayer.class);
 
     private final AudioPlayerManager playerManager;
-    private final Map<Long, GuildMusicManager> musicManagers;
+
+    // TODO: Unnecessary if there is one AudioPlayer per guild
+    private final Map<Long, GuildMusicManager> musicManagers = new HashMap<>();
+
     private FFmpegManager fFmpegManager;
+    private JDA jda;
+    private TextChannel general;
+    private VoiceChannel listen;
 
-    public AudioPlayer(FFmpegManager fFmpegManager) {
+    public AudioPlayer(FFmpegManager fFmpegManager, JDA jda) {
         this.fFmpegManager = fFmpegManager;
-        this.musicManagers = new HashMap<>();
+        (this.jda = jda).addEventListener(this);
+        this.general = this.jda.getTextChannelById(591482977989427211L); // TODO: Make this configurable or something in prod
+        this.listen = this.jda.getVoiceChannelById(591484863455166474L); // TODO: Make this configurable or something in prod
 
-        this.playerManager = new DefaultAudioPlayerManager();
-        AudioSourceManagers.registerRemoteSources(playerManager);
-        AudioSourceManagers.registerLocalSource(playerManager);
+        AudioSourceManagers.registerLocalSource(this.playerManager = new DefaultAudioPlayerManager());
     }
 
+    // TODO: Temporary commands, move them to another file and make the command recognition at least semi-modular lol
+    @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        String[] command = event.getMessage().getContentRaw().split(" ", 2);
+        var command = event.getMessage().getContentRaw();
         Guild guild = event.getGuild();
 
         if (guild != null) {
-            if ("~play".equals(command[0]) && command.length == 2) {
-                loadAndPlay(event.getTextChannel(), command[1]);
-            } else if ("~skip".equals(command[0])) {
-                skipTrack(event.getTextChannel());
+            switch (command.toLowerCase()) {
+                case "dem play":
+                    initialPlay(new Video(this.fFmpegManager, new File("videos\\video.mp4"), "", ""));
+                    break;
+                case "dem pause":
+                    pauseTrack();
+                    break;
+                case "dem resume":
+                    resumeTrack();
+                    break;
             }
         }
     }
 
-    public void startAudio() {
+    private CompletableFuture<File> generateAudio(Video video) {
+        return CompletableFuture.supplyAsync(() -> {
+            var outDir = new File("audio");
+            outDir.mkdirs();
+            var outFile = new File(outDir.getAbsolutePath(), "audio.mp3");
+            if (outFile.exists()) {
+                LOGGER.info("{} already exists, skipping!", outFile.getAbsolutePath());
+                return outFile;
+            }
 
+            this.fFmpegManager.createJob(new FFmpegBuilder()
+                    .setInput(video.getVideoFile().getAbsolutePath())
+                    .addOutput(outFile.getAbsolutePath())
+                    .addExtraArgs("-f", "mp3", "-ab", "192000")
+                    .done());
+            return outFile;
+        });
     }
 
+    /**
+     * Should only be ran once.
+     *
+     * @param video The video
+     */
+    public void initialPlay(Video video) {
+        generateAudio(video).thenAccept(file -> {
+            try {
+                LOGGER.info("Generated audio, tyring to play it now...");
+                loadAndPlay(this.general, file.getAbsolutePath());
+            } catch (Exception e) {
+                LOGGER.error("Error while loading/playing track!", e);
+            }
+        });
+    }
 
+    /**
+     * Pauses the track.
+     */
+    public void pauseTrack() {
+        GuildMusicManager musicManager = getGuildAudioPlayer(this.general.getGuild());
+        musicManager.scheduler.pauseTrack();
+    }
+
+    /**
+     * Resumes the track.
+     */
+    public void resumeTrack() {
+        GuildMusicManager musicManager = getGuildAudioPlayer(this.general.getGuild());
+        musicManager.scheduler.resumeTrack();
+    }
 
     private synchronized GuildMusicManager getGuildAudioPlayer(Guild guild) {
         long guildId = Long.parseLong(guild.getId());
@@ -71,56 +138,37 @@ public class AudioPlayer {
         playerManager.loadItemOrdered(musicManager, trackUrl, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                channel.sendMessage("Adding to queue " + track.getInfo().title).queue();
+                channel.sendMessage("Playing the video's audio").queue();
 
                 play(channel.getGuild(), musicManager, track);
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
-                AudioTrack firstTrack = playlist.getSelectedTrack();
-
-                if (firstTrack == null) {
-                    firstTrack = playlist.getTracks().get(0);
-                }
-
-                channel.sendMessage("Adding to queue " + firstTrack.getInfo().title + " (first track of playlist " + playlist.getName() + ")").queue();
-
-                play(channel.getGuild(), musicManager, firstTrack);
+                channel.sendMessage("How did you get a playlist working on here? Like bruh...").queue();
             }
 
             @Override
             public void noMatches() {
-                channel.sendMessage("Nothing found by " + trackUrl).queue();
+                channel.sendMessage("Audio file not found! Contact administrators. Failed to find: " + trackUrl).queue();
             }
 
             @Override
             public void loadFailed(FriendlyException exception) {
-                channel.sendMessage("Could not play: " + exception.getMessage()).queue();
+                channel.sendMessage("Failed to play audio! " + exception.getMessage()).queue();
+                LOGGER.error("Failed to play audio! {}", exception.getLocalizedMessage());
             }
         });
     }
 
     private void play(Guild guild, GuildMusicManager musicManager, AudioTrack track) {
-        connectToFirstVoiceChannel(guild.getAudioManager());
+        var audioManager = guild.getAudioManager();
+
+        if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
+            audioManager.openAudioConnection(this.listen);
+        }
 
         musicManager.scheduler.queue(track);
-    }
-
-    private void skipTrack(TextChannel channel) {
-        GuildMusicManager musicManager = getGuildAudioPlayer(channel.getGuild());
-        musicManager.scheduler.nextTrack();
-
-        channel.sendMessage("Skipped to next track.").queue();
-    }
-
-    private static void connectToFirstVoiceChannel(AudioManager audioManager) {
-        if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
-            for (VoiceChannel voiceChannel : audioManager.getGuild().getVoiceChannels()) {
-                audioManager.openAudioConnection(voiceChannel);
-                break;
-            }
-        }
     }
 
 }

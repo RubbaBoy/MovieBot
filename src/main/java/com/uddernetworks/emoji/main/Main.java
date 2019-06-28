@@ -61,25 +61,26 @@ public class Main extends ListenerAdapter {
     public void onReady(ReadyEvent event) {
         LOGGER.info("Bot Ready");
 
+
         try {
             this.fFmpegManager = new FFmpegManager();
             this.videoGifProcessor = new VideoGifProcessor(this.fFmpegManager);
-            this.audioPlayer = new AudioPlayer(this.fFmpegManager);
+            this.audioPlayer = new AudioPlayer(this.fFmpegManager, event.getJDA());
         } catch (IOException e) {
             LOGGER.error("There was an error initializing some stuff!", e);
             System.exit(0);
         }
+//
+//        playing.put(591484659913981972L, new VideoPlayer(new Video(null, "Rick roll", "test123"), event.getJDA().getTextChannelById(591484659913981972L)));
+//
+//        LOGGER.info("Pre-processing video...");
+//        parser = new DefaultVideoParser();
+//
+//        video = parser.getVideo(new File("videos\\video.mp4"));
+//        parser.preprocessVideo(video, 0);
 
-        playing.put(591484659913981972L, new VideoPlayer(new Video(null, "Rick roll", "test123"), event.getJDA().getTextChannelById(591484659913981972L)));
-
-        LOGGER.info("Pre-processing video...");
-        parser = new DefaultVideoParser();
-
-        video = parser.getVideo(new File("videos\\video.mp4"));
-        parser.preprocessVideo(video, 0);
-
-        LOGGER.info("Starting movie...");
-        CompletableFuture.runAsync(this::runUpdate);
+//        LOGGER.info("Starting movie...");
+//        CompletableFuture.runAsync(this::runUpdate);
     }
 
     private void runUpdate() {
