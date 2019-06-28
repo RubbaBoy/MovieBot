@@ -29,6 +29,11 @@ import java.util.concurrent.CompletableFuture;
 public class Main extends ListenerAdapter {
 
     private static Logger LOGGER = LoggerFactory.getLogger(Main.class);
+    private static Video testVideo;
+
+    public static Video getTestVideo() {
+        return testVideo;
+    }
 
     /*
      * This requires you to have FFmpeg installed (Including FFprobe), and it is autodetected with the Windows command
@@ -50,51 +55,28 @@ public class Main extends ListenerAdapter {
 
     private FFmpegManager fFmpegManager;
     private VideoGifProcessor videoGifProcessor;
-    private AudioPlayer audioPlayer;
-
-    private DefaultVideoParser parser;
-    private ProcessableVideo video;
     private HashMap<Long, VideoPlayer> playing = new HashMap<>();
-    private int nextGif = 0;
 
     @Override
     public void onReady(ReadyEvent event) {
         LOGGER.info("Bot Ready");
 
-
         try {
             this.fFmpegManager = new FFmpegManager();
             this.videoGifProcessor = new VideoGifProcessor(this.fFmpegManager);
-            this.audioPlayer = new AudioPlayer(this.fFmpegManager, event.getJDA());
         } catch (IOException e) {
             LOGGER.error("There was an error initializing some stuff!", e);
-            System.exit(0);
-        }
-//
-//        playing.put(591484659913981972L, new VideoPlayer(new Video(null, "Rick roll", "test123"), event.getJDA().getTextChannelById(591484659913981972L)));
-//
-//        LOGGER.info("Pre-processing video...");
-//        parser = new DefaultVideoParser();
-//
-//        video = parser.getVideo(new File("videos\\video.mp4"));
-//        parser.preprocessVideo(video, 0);
-
-//        LOGGER.info("Starting movie...");
-//        CompletableFuture.runAsync(this::runUpdate);
-    }
-
-    private void runUpdate() {
-        long start = System.currentTimeMillis();
-
-
-        // Wait for next time to update
-        try {
-            Thread.sleep(15 * 1000 /* 15 seconds */ - (System.currentTimeMillis() - start));
-        } catch (InterruptedException e) {
             e.printStackTrace();
-            return;
         }
-        CompletableFuture.runAsync(this::runUpdate);
+
+        try {
+            var videoFile = new File("videos\\video.mp4");
+            Main.testVideo = new Video(this.fFmpegManager, this.videoGifProcessor, videoFile, "Avengers Endgame", "test123");
+            var channel = event.getJDA().getTextChannelById(591484659913981972L);
+            playing.put(591484659913981972L, new VideoPlayer(Main.testVideo, channel));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

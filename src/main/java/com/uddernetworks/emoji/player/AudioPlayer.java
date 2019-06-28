@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.uddernetworks.emoji.ffmpeg.FFmpegManager;
+import com.uddernetworks.emoji.main.Main;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
@@ -36,6 +37,9 @@ public class AudioPlayer extends ListenerAdapter {
     private JDA jda;
     private TextChannel general;
     private VoiceChannel listen;
+    private AudioTrack currentTrack;
+    private GuildMusicManager musicManager;
+    private boolean playing = false;
 
     public AudioPlayer(FFmpegManager fFmpegManager, JDA jda) {
         this.fFmpegManager = fFmpegManager;
@@ -55,7 +59,7 @@ public class AudioPlayer extends ListenerAdapter {
         if (guild != null) {
             switch (command.toLowerCase()) {
                 case "dem play":
-                    initialPlay(new Video(this.fFmpegManager, new File("videos\\video.mp4"), "", ""));
+                    initialPlay(Main.getTestVideo());
                     break;
                 case "dem pause":
                     pauseTrack();
@@ -71,7 +75,7 @@ public class AudioPlayer extends ListenerAdapter {
         return CompletableFuture.supplyAsync(() -> {
             var outDir = new File("audio");
             outDir.mkdirs();
-            var outFile = new File(outDir.getAbsolutePath(), "audio.mp3");
+            var outFile = new File(outDir, video.getVideoFile().getName().hashCode() + ".mp3");
             if (outFile.exists()) {
                 LOGGER.info("{} already exists, skipping!", outFile.getAbsolutePath());
                 return outFile;
@@ -118,6 +122,29 @@ public class AudioPlayer extends ListenerAdapter {
         musicManager.scheduler.resumeTrack();
     }
 
+    /**
+     * Seeks the track.
+     */
+    public void seekTrack(long position) {
+        currentTrack.setPosition(position);
+    }
+
+    public boolean isPlaying() {
+        return playing;
+    }
+
+    public CompletableFuture<AudioTrack> waitForTrackLoaded() {
+        return CompletableFuture.supplyAsync(() -> {
+            while (currentTrack == null) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {
+                }
+            }
+            return currentTrack;
+        });
+    }
+
     private synchronized GuildMusicManager getGuildAudioPlayer(Guild guild) {
         long guildId = Long.parseLong(guild.getId());
         GuildMusicManager musicManager = musicManagers.get(guildId);
@@ -133,14 +160,12 @@ public class AudioPlayer extends ListenerAdapter {
     }
 
     private void loadAndPlay(final TextChannel channel, final String trackUrl) {
-        GuildMusicManager musicManager = getGuildAudioPlayer(channel.getGuild());
+        this.musicManager = getGuildAudioPlayer(channel.getGuild());
 
         playerManager.loadItemOrdered(musicManager, trackUrl, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                channel.sendMessage("Playing the video's audio").queue();
-
-                play(channel.getGuild(), musicManager, track);
+                currentTrack = track;
             }
 
             @Override
@@ -161,14 +186,15 @@ public class AudioPlayer extends ListenerAdapter {
         });
     }
 
-    private void play(Guild guild, GuildMusicManager musicManager, AudioTrack track) {
-        var audioManager = guild.getAudioManager();
+    public void play() {
+        var audioManager = this.listen.getGuild().getAudioManager();
 
         if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
             audioManager.openAudioConnection(this.listen);
         }
 
-        musicManager.scheduler.queue(track);
+        musicManager.scheduler.queue(currentTrack);
+        this.playing = true;
     }
 
 }
