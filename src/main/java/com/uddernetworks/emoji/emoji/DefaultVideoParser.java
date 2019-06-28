@@ -14,7 +14,7 @@ public class DefaultVideoParser implements VideoParser {
 
     private static Logger LOGGER = LoggerFactory.getLogger(DefaultVideoParser.class);
 
-    private static final double FRAMES_PER_GIF = 100;
+    public static final double FRAMES_PER_GIF = 100;
 
     private GifGenerator gifGenerator;
 
