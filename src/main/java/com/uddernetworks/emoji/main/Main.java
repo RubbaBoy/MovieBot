@@ -2,11 +2,11 @@ package com.uddernetworks.emoji.main;
 
 import com.uddernetworks.emoji.ffmpeg.FFmpegManager;
 import com.uddernetworks.emoji.gif.VideoGifProcessor;
-import com.uddernetworks.emoji.player.video.LocalVideo;
 import com.uddernetworks.emoji.player.video.Video;
 import com.uddernetworks.emoji.player.video.VideoCreator;
 import com.uddernetworks.emoji.player.video.VideoPlayer;
 import net.dv8tion.jda.core.AccountType;
+import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.Game;
@@ -17,9 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 
 public class Main extends ListenerAdapter {
@@ -49,6 +47,8 @@ public class Main extends ListenerAdapter {
                 .build();
     }
 
+    private JDA jda;
+    private ConfigManager configManager;
     private FFmpegManager fFmpegManager;
     private VideoGifProcessor videoGifProcessor;
     private VideoCreator videoCreator;
@@ -56,7 +56,12 @@ public class Main extends ListenerAdapter {
 
     @Override
     public void onReady(ReadyEvent event) {
+        this.jda = event.getJDA();
         LOGGER.info("Bot Ready");
+
+        this.configManager = new ConfigManager();
+
+        this.jda.getGuilds().forEach(this.configManager::loadConfig);
 
         try {
             this.fFmpegManager = new FFmpegManager();
@@ -67,18 +72,40 @@ public class Main extends ListenerAdapter {
             e.printStackTrace();
         }
 
-        try {
-            testVideo = this.videoCreator.createVideo(new URL("https://rubbaboy.me/files/02emyvx-video.mp4"), "Secret Video", "A secret video; should not be played");
-//            testVideo = this.videoCreator.createVideo(new URL("https://rubbaboy.me/files/3udhvjt-video_sync.mp4"), "Audio Sync Test", "A video to help determine if the audio and video is synced.");
-            var channel = event.getJDA().getTextChannelById(591484659913981972L);
-            playing.put(591484659913981972L, new VideoPlayer(Main.testVideo, channel));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new CommandManager(this);
+
+//        try {
+//            testVideo = this.videoCreator.createVideo(new URL("https://rubbaboy.me/files/02emyvx-video.mp4"), "Secret Video", "A secret video; should not be played");
+////            testVideo = this.videoCreator.createVideo(new URL("https://rubbaboy.me/files/3udhvjt-video_sync.mp4"), "Audio Sync Test", "A video to help determine if the audio and video is synced.");
+//            var channel = event.getJDA().getTextChannelById(591484659913981972L);
+//            playing.put(591484659913981972L, new VideoPlayer(Main.testVideo, channel));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
 
+    }
+
+    public ConfigManager getConfigManager() {
+        return configManager;
+    }
+
+    public FFmpegManager getfFmpegManager() {
+        return fFmpegManager;
+    }
+
+    public VideoGifProcessor getVideoGifProcessor() {
+        return videoGifProcessor;
+    }
+
+    public VideoCreator getVideoCreator() {
+        return videoCreator;
+    }
+
+    public JDA getJDA() {
+        return this.jda;
     }
 }
