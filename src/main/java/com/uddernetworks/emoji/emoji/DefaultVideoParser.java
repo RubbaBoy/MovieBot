@@ -27,12 +27,12 @@ public class DefaultVideoParser implements VideoParser {
     //       system and stuff.
 
     @Override
-    public void preprocessVideo(ProcessableVideo video) {
+    public void preprocessVideo(ProcessableVideo video, int skip) {
         var separatedGifs = new HashMap<IntPair, List<BufferedImage>>();
         var total = System.currentTimeMillis();
 
         var start = System.currentTimeMillis();
-        var frames = video.getNextXFrames(25 * 5 /* Skip 5 seconds */, (int) FRAMES_PER_GIF);
+        var frames = video.getNextXFrames(25 * 5 * skip, (int) FRAMES_PER_GIF);
         LOGGER.info("Took {}ms to fetch {} frames", System.currentTimeMillis() - start, FRAMES_PER_GIF);
 
         frames.forEach(frame -> separateImages(frame).ifPresentOrElse(separation -> {

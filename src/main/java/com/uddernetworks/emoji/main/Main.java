@@ -72,7 +72,7 @@ public class Main extends ListenerAdapter {
         parser = new DefaultVideoParser();
 
         video = parser.getVideo(new File("videos\\video.mp4"));
-        // parser.preprocessVideo(video);
+        parser.preprocessVideo(video, 0);
 
         System.out.println("Uploading first sets of emojis...");
 
@@ -113,12 +113,12 @@ public class Main extends ListenerAdapter {
         nextEmoji++;
 
         // Generate next buffer
-        video.getNextXFrames((25 * 5) * nextEmoji, (int) DefaultVideoParser.FRAMES_PER_GIF);
+        parser.preprocessVideo(video, nextEmoji);
         createNextEmotes();
 
         // Wait for next time to update
         try {
-            Thread.sleep(5000 - (System.currentTimeMillis() - start));
+            Thread.sleep(10 * 1000 - (System.currentTimeMillis() - start));
         } catch (InterruptedException e) {
             e.printStackTrace();
             return;

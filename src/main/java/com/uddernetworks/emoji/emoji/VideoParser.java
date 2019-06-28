@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface VideoParser {
 
-    void preprocessVideo(ProcessableVideo video);
+    void preprocessVideo(ProcessableVideo video, int skip);
 
     Optional<Map<IntPair, BufferedImage>> separateImages(BufferedImage input);
 

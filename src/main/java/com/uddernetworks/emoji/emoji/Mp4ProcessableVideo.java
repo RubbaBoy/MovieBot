@@ -56,7 +56,7 @@ public class Mp4ProcessableVideo implements ProcessableVideo {
                 .addOutput(outDir.getAbsolutePath() + "\\%04d.png")
                 .setVideoFilter("select=gte(n\\, " + skip + ")")
                 .setFrames(frames)
-                .addExtraArgs("-vsync", "vfr", "-hide_banner", "-vf", "scale=640:-1")
+                .addExtraArgs("-vsync", "vfr", "-hide_banner", "-vf", "scale=320:-1")
                 .done();
         executor.createJob(builder).run();
 
