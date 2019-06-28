@@ -1,4 +1,4 @@
-package com.uddernetworks.emoji.player;
+package com.uddernetworks.emoji.player.audio;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;

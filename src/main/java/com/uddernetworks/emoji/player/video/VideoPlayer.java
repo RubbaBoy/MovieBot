@@ -1,9 +1,8 @@
-package com.uddernetworks.emoji.player;
+package com.uddernetworks.emoji.player.video;
 
-import com.uddernetworks.emoji.ffmpeg.FFmpegManager;
-import com.uddernetworks.emoji.gif.VideoGifProcessor;
+import com.uddernetworks.emoji.player.audio.AudioPlayer;
+import com.uddernetworks.emoji.utils.Thread;
 import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.entities.TextChannel;
@@ -14,12 +13,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class VideoPlayer {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(Video.class);
-    private static final int SECTION_DURATION = 15; // Seconds;
+    private static Logger LOGGER = LoggerFactory.getLogger(LocalVideo.class);
+    private static final int SECTION_DURATION = 10; // Seconds;
 
     private final TextChannel channel;
     private final Video video;
@@ -104,6 +102,19 @@ public class VideoPlayer {
         });
     }
 
+    private CompletableFuture<Void> playAudioFor(int duration) {
+        return CompletableFuture.runAsync(() -> {
+            Thread.sleep(300);
+            if (!this.audioPlayer.isPlaying()) {
+                this.audioPlayer.play();
+            } else {
+                this.audioPlayer.resumeTrack();
+            }
+        })
+                .thenRunAsync(() -> Thread.sleep(duration))
+                .thenRunAsync(() -> this.audioPlayer.pauseTrack());
+    }
+
     private void nextSet(boolean loop) {
         long start = System.currentTimeMillis();
 
@@ -119,24 +130,27 @@ public class VideoPlayer {
         currentImage = nextImage;
 
         try {
-            if (seek != 0 && !this.audioPlayer.isPlaying()) {
-                this.audioPlayer.play();
-            } else if (this.audioPlayer.isPlaying()) {
-                this.audioPlayer.seekTrack((seek - SECTION_DURATION) * 1000);
-            }
-
             if (message == null) {
                 this.message = channel.sendMessage(createEmbed(currentImage)).complete();
             } else {
-                message.editMessage(createEmbed(currentImage)).queue();
+                var embed = createEmbed(currentImage);
+                audioPlayer.play();
+                message.editMessage(embed).queue(cons -> {
+                    LOGGER.info("Finished embed");
+                });
             }
 
             if (seek == 0) {
+                var shit = System.currentTimeMillis();
                 this.audioPlayer.initialPlay(this.video);
                 this.audioPlayer.waitForTrackLoaded().get();
+                LOGGER.info("Took {}ms uwu", System.currentTimeMillis() - shit);
             }
 
+            long trime = System.currentTimeMillis();
             var file = this.video.convertToGif(seek, SECTION_DURATION).get();
+
+            LOGGER.info("Took {}ms", System.currentTimeMillis() - trime);
             var url = uploadImage(file).get();
             this.nextImage = url;
             LOGGER.info(url);
@@ -150,15 +164,11 @@ public class VideoPlayer {
             var millis = SECTION_DURATION * 1000 - (System.currentTimeMillis() - start);
             if (seek != 0 && millis > 0) {
                 // Wait for next time to update
-                try {
-                    LOGGER.info("wait for " + millis);
-                    Thread.sleep(millis);
-                } catch (InterruptedException e) {
-                    LOGGER.error("Error while sleeping", e);
-                    return;
-                }
+                LOGGER.info("wait for " + millis);
+//                playAudioFor((int) millis + 200);
+                Thread.sleep(millis);
+                audioPlayer.pauseTrack();
             }
-
             CompletableFuture.runAsync(this::nextSet);
         }
     }

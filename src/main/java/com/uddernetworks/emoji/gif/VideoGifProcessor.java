@@ -24,20 +24,6 @@ public class VideoGifProcessor {
     private static Logger LOGGER = LoggerFactory.getLogger(VideoGifProcessor.class);
     private FFmpegManager fFmpegManager;
 
-
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        LOGGER.info("Making 5 gifs, each 5 seconds long, one after another");
-
-//        var video = new File("videos\\video.mp4");
-//        var processor = new VideoGifProcessor();
-//
-//        for (int i = 0; i < 5; i++) {
-//            var start = System.currentTimeMillis();
-//            var gif = processor.convertVideoToGif(video, i * 5, 5).get();
-//            LOGGER.info("Created gif {} in {}ms", gif.getName(), System.currentTimeMillis() - start);
-//        }
-    }
-
     public VideoGifProcessor(FFmpegManager fFmpegManager) throws IOException {
         this.fFmpegManager = fFmpegManager;
     }

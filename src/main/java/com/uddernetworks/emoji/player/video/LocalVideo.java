@@ -1,4 +1,4 @@
-package com.uddernetworks.emoji.player;
+package com.uddernetworks.emoji.player.video;
 
 import com.uddernetworks.emoji.ffmpeg.FFmpegManager;
 import com.uddernetworks.emoji.gif.VideoGifProcessor;
@@ -9,9 +9,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-public class Video {
+public class LocalVideo implements Video {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(Video.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(LocalVideo.class);
 
     private String title;
     private String description;
@@ -20,7 +20,7 @@ public class Video {
     private FFmpegManager fFmpegManager;
     private VideoGifProcessor videoGifProcessor;
 
-    public Video(FFmpegManager fFmpegManager, VideoGifProcessor videoGifProcessor, File videoFile, String title, String description) {
+    public LocalVideo(FFmpegManager fFmpegManager, VideoGifProcessor videoGifProcessor, File videoFile, String title, String description) {
         this.title = title;
         this.description = description;
         this.videoFile = videoFile;
@@ -34,35 +34,37 @@ public class Video {
         }
     }
 
+    @Override
     public FFmpegManager getfFmpegManager() {
         return fFmpegManager;
     }
 
+    @Override
     public VideoGifProcessor getVideoGifProcessor() {
         return videoGifProcessor;
     }
 
+    @Override
     public File getVideoFile() {
         return videoFile;
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
-    /**
-     * Returns the length of the video, in seconds.
-     *
-     * @return The seconds of the video
-     */
+    @Override
     public int getLength() {
         return this.duration;
     }
 
+    @Override
     public CompletableFuture<File> convertToGif(int offset, int duration) {
         return this.videoGifProcessor.convertVideoToGif(this.videoFile, offset, duration);
     }

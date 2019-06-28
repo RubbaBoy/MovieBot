@@ -1,6 +1,5 @@
 package com.uddernetworks.emoji.ffmpeg;
 
-import com.uddernetworks.emoji.emoji.DefaultGifGenerator;
 import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.FFmpegExecutor;
 import net.bramp.ffmpeg.FFprobe;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class FFmpegManager {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(DefaultGifGenerator.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(FFmpegManager.class);
 
     private FFmpegExecutor executor;
 

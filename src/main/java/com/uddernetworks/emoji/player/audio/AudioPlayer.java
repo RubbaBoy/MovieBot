@@ -1,4 +1,4 @@
-package com.uddernetworks.emoji.player;
+package com.uddernetworks.emoji.player.audio;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.uddernetworks.emoji.ffmpeg.FFmpegManager;
 import com.uddernetworks.emoji.main.Main;
+import com.uddernetworks.emoji.player.video.Video;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
@@ -137,9 +138,8 @@ public class AudioPlayer extends ListenerAdapter {
         return CompletableFuture.supplyAsync(() -> {
             while (currentTrack == null) {
                 try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ignored) {
-                }
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {}
             }
             return currentTrack;
         });
@@ -166,6 +166,7 @@ public class AudioPlayer extends ListenerAdapter {
             @Override
             public void trackLoaded(AudioTrack track) {
                 currentTrack = track;
+//                play(); // TODO: Remove
             }
 
             @Override
@@ -187,6 +188,11 @@ public class AudioPlayer extends ListenerAdapter {
     }
 
     public void play() {
+        if (isPlaying()) {
+            resumeTrack();
+            return;
+        }
+
         var audioManager = this.listen.getGuild().getAudioManager();
 
         if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
