@@ -42,7 +42,7 @@ public class Main extends ListenerAdapter {
     }
 
 
-    List<Guild> emojiGuilds = new ArrayList<>();
+    private List<Guild> emojiGuilds = new ArrayList<>();
     private Emote[] currentEmotes;
     private Emote[] bufferedEmotes;
     private DefaultVideoParser parser;
