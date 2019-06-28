@@ -1,7 +1,11 @@
 package com.uddernetworks.emoji.main;
 
+import com.uddernetworks.emoji.emoji.DefaultGifGenerator;
 import com.uddernetworks.emoji.emoji.DefaultVideoParser;
 import com.uddernetworks.emoji.emoji.ProcessableVideo;
+import com.uddernetworks.emoji.ffmpeg.FFmpegManager;
+import com.uddernetworks.emoji.gif.VideoGifProcessor;
+import com.uddernetworks.emoji.player.AudioPlayer;
 import com.uddernetworks.emoji.player.Video;
 import com.uddernetworks.emoji.player.VideoPlayer;
 import net.dv8tion.jda.core.AccountType;
@@ -11,6 +15,8 @@ import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.ReadyEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
@@ -21,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class Main extends ListenerAdapter {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     /*
      * This requires you to have FFmpeg installed (Including FFprobe), and it is autodetected with the Windows command
@@ -40,6 +48,10 @@ public class Main extends ListenerAdapter {
                 .build();
     }
 
+    private FFmpegManager fFmpegManager;
+    private VideoGifProcessor videoGifProcessor;
+    private AudioPlayer audioPlayer;
+
     private DefaultVideoParser parser;
     private ProcessableVideo video;
     private HashMap<Long, VideoPlayer> playing = new HashMap<>();
@@ -47,18 +59,26 @@ public class Main extends ListenerAdapter {
 
     @Override
     public void onReady(ReadyEvent event) {
-        System.out.println("Bot Ready");
+        LOGGER.info("Bot Ready");
 
+        try {
+            this.fFmpegManager = new FFmpegManager();
+            this.videoGifProcessor = new VideoGifProcessor(this.fFmpegManager);
+            this.audioPlayer = new AudioPlayer(this.fFmpegManager);
+        } catch (IOException e) {
+            LOGGER.error("There was an error initializing some stuff!", e);
+            System.exit(0);
+        }
 
         playing.put(591484659913981972L, new VideoPlayer(new Video(null, "Rick roll", "test123"), event.getJDA().getTextChannelById(591484659913981972L)));
 
-        System.out.println("Pre-processing video...");
+        LOGGER.info("Pre-processing video...");
         parser = new DefaultVideoParser();
 
         video = parser.getVideo(new File("videos\\video.mp4"));
         parser.preprocessVideo(video, 0);
 
-        System.out.println("Starting movie...");
+        LOGGER.info("Starting movie...");
         CompletableFuture.runAsync(this::runUpdate);
     }
 
