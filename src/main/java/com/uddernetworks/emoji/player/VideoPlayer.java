@@ -1,44 +1,65 @@
 package com.uddernetworks.emoji.player;
 
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.entities.Emote;
+import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.entities.TextChannel;
-
-import java.util.ArrayList;
-import java.util.List;
+import net.dv8tion.jda.core.entities.VoiceChannel;
 
 public class VideoPlayer {
-    private final List<Message> messages;
+    private Message message;
     private final TextChannel channel;
+    private final Video video;
 
     // TODO: Sound
     // TODO: Get messages from some type of data source when added to prevent more messages being sent on bot ready
-    public VideoPlayer(TextChannel channel) {
-        messages = new ArrayList<>();
+    public VideoPlayer(Video video, TextChannel channel) {
         this.channel = channel;
+        this.video = video;
+        this.message = this.channel.sendMessage(createEmbed(null, 0)).complete();
     }
 
-    public void updateMessages(Emote[] emotes) {
-        List<String> messages = new ArrayList<>();
+    private MessageEmbed createEmbed(String image, int seek) {
+        var embed = new EmbedBuilder();
 
-        for (int i = 0; i < 3; i += 48) {
-            StringBuilder msg = new StringBuilder();
+        var hours = Math.floor((double) video.getLength() / 60 / 60);
+        var mins = Math.floor(((double) video.getLength() - hours * 60) / 60);
+        var secs = video.getLength() - mins * 60;
+        var curHours = Math.floor((double) seek / 60 / 60);
+        var curMins = Math.floor(((double) video.getLength() - seek * 60) / 60);
+        var curSecs = seek - curMins * 60;
 
-            for (int j = i; j < i + 48; j++)
-                msg.append(emotes[j].getAsMention());
+        var totalTime = mins + ":" + secs;
+        var seekTime = curMins + ":" + curSecs;
 
-            messages.add(msg.toString());
+        if (hours > 0) totalTime = hours + ":" + totalTime;
+        if (curHours > 0) seekTime = curHours + ":" + seekTime;
+
+        var prog = (double) seek / video.getLength();
+
+        StringBuilder playBar = new StringBuilder();
+
+        for (double i = 0; i < 1; i += 0.1) {
+            if (prog >= i && prog < i + 0.1) {
+                playBar.append("\u25CF");
+            } else {
+                playBar.append("\u2500");
+            }
         }
 
-        if (this.messages.size() == 0) {
-            for (String msg : messages) {
-                this.messages.add(channel.sendMessage(msg).complete());
-            }
-        } else {
-            for (int i = 0; i < messages.size(); i++) {
-                this.messages.get(i).editMessage(messages.get(i)).queue();
-            }
-        }
+        embed.setTitle(video.getTitle());
+        embed.setDescription(seekTime + " " + playBar + " " + totalTime);
+        if (image != null) embed.setImage(image);
+        embed.setColor(0);
+
+        return embed.build();
+    }
+
+    public void updatePlayer(String image, int seek) {
+        message.editMessage(createEmbed(image, seek)).queue();
+    }
+
+    public void joinVoice(VoiceChannel channel) {
+        // TODO
     }
 }
