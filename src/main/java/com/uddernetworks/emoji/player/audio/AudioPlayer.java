@@ -13,6 +13,7 @@ import com.uddernetworks.emoji.player.video.Video;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
@@ -33,17 +34,22 @@ public class AudioPlayer extends ListenerAdapter {
 
     private FFmpegManager fFmpegManager;
     private JDA jda;
-    private TextChannel general;
+    private Main main;
+    private Guild guild;
+    private TextChannel feedback;
     private VoiceChannel listen;
     private AudioTrack currentTrack;
     private GuildMusicManager musicManager;
     private boolean playing = false;
 
-    public AudioPlayer(FFmpegManager fFmpegManager, JDA jda) {
+    public AudioPlayer(FFmpegManager fFmpegManager, Main main, TextChannel channel) {
         this.fFmpegManager = fFmpegManager;
-        (this.jda = jda).addEventListener(this);
-        this.general = this.jda.getTextChannelById(591482977989427211L); // TODO: Make this configurable or something in prod
-        this.listen = this.jda.getVoiceChannelById(591484863455166474L); // TODO: Make this configurable or something in prod
+        this.main = main;
+        this.guild = channel.getGuild();
+        (this.jda = main.getJDA()).addEventListener(this);
+
+        this.listen = this.jda.getVoiceChannelById(this.main.getConfigManager().getValue(guild, "voicechannel").orElse("0"));
+        this.feedback = channel;
 
         AudioSourceManagers.registerLocalSource(this.playerManager = new DefaultAudioPlayerManager());
     }
@@ -86,7 +92,7 @@ public class AudioPlayer extends ListenerAdapter {
         generateAudio(video).thenAccept(file -> {
             try {
                 LOGGER.info("Generated audio, tyring to play it now...");
-                loadAndPlay(this.general, file.getAbsolutePath());
+                loadAndPlay(file.getAbsolutePath());
             } catch (Exception e) {
                 LOGGER.error("Error while loading/playing track!", e);
             }
@@ -97,7 +103,7 @@ public class AudioPlayer extends ListenerAdapter {
      * Pauses the track.
      */
     public void pauseTrack() {
-        GuildMusicManager musicManager = getGuildAudioPlayer(this.general.getGuild());
+        GuildMusicManager musicManager = getGuildAudioPlayer();
         musicManager.scheduler.pauseTrack();
     }
 
@@ -105,7 +111,7 @@ public class AudioPlayer extends ListenerAdapter {
      * Resumes the track.
      */
     public void resumeTrack() {
-        GuildMusicManager musicManager = getGuildAudioPlayer(this.general.getGuild());
+        GuildMusicManager musicManager = getGuildAudioPlayer();
         musicManager.scheduler.resumeTrack();
     }
 
@@ -131,40 +137,39 @@ public class AudioPlayer extends ListenerAdapter {
         });
     }
 
-    private synchronized GuildMusicManager getGuildAudioPlayer(Guild guild) {
+    private synchronized GuildMusicManager getGuildAudioPlayer() {
 
         if (musicManager == null) {
             musicManager = new GuildMusicManager(playerManager);
         }
 
-        guild.getAudioManager().setSendingHandler(musicManager.getSendHandler());
+        this.guild.getAudioManager().setSendingHandler(musicManager.getSendHandler());
 
         return musicManager;
     }
 
-    private void loadAndPlay(final TextChannel channel, final String trackUrl) {
-        this.musicManager = getGuildAudioPlayer(channel.getGuild());
+    private void loadAndPlay(final String trackUrl) {
+        this.musicManager = getGuildAudioPlayer();
 
         playerManager.loadItemOrdered(musicManager, trackUrl, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 currentTrack = track;
-//                play(); // TODO: Remove
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
-                channel.sendMessage("How did you get a playlist working on here? Like bruh...").queue();
+                feedback.sendMessage("How did you get a playlist working on here? Like bruh...").queue();
             }
 
             @Override
             public void noMatches() {
-                channel.sendMessage("Audio file not found! Contact administrators. Failed to find: " + trackUrl).queue();
+                feedback.sendMessage("Audio file not found! Contact administrators. Failed to find: " + trackUrl).queue();
             }
 
             @Override
             public void loadFailed(FriendlyException exception) {
-                channel.sendMessage("Failed to play audio! " + exception.getMessage()).queue();
+                feedback.sendMessage("Failed to play audio! " + exception.getMessage()).queue();
                 LOGGER.error("Failed to play audio! {}", exception.getLocalizedMessage());
             }
         });

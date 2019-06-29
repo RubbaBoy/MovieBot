@@ -70,7 +70,7 @@ public class CommandManager extends ListenerAdapter {
                             "**dem help** Shows this help menu\n" +
                                     "**dem list** Displays the available videos\n" +
                                     "**dem play [video name]** Plays the given video\n" +
-                                    "**dem request [video url]** Requests for a video to be uploaded. If approved, the user will be tagged.\n" +
+                                    "**dem request [video url]** Requests for a video to be uploaded. If approved, the user will be DM'd.\n" +
                                     "**dem pause** Pauses current playing video\n" +
                                     "**dem resume** Resumes current playing video\n" +
                                     "**dem stop** Stops current playing video"
@@ -120,7 +120,7 @@ public class CommandManager extends ListenerAdapter {
                 }
 
                 try {
-                    player = this.main.playVideo(guild, video);
+                    player = this.main.playVideo(guild, video, author, channel);
                 } catch (IOException e) {
                     e.printStackTrace();
                     error(channel, author, "Something happened when attempting to play " + video.getTitle());
@@ -244,6 +244,16 @@ public class CommandManager extends ListenerAdapter {
                 this.configManager.setValue(guild, "textchannel", textChannel.getId());
                 sendEmbed(channel, author, "Set text channel", embedBuilder -> embedBuilder.setDescription("The text channel has been set to " + textChannel.getName()));
                 break;
+            case "reload":
+                if (!PermissionUtil.checkPermission(author, Permission.ADMINISTRATOR) && author.getGuild().getIdLong() == 591482977356218390L) {
+                    error(channel, author, "You must be a developer of the bot to do that");
+                    return;
+                }
+
+                this.main.reload();
+
+                sendEmbed(channel, author, "Reload Complete", embedBuilder -> embedBuilder.setDescription("Reloaded videos!"));
+                break;
         }
     }
 
@@ -296,7 +306,7 @@ public class CommandManager extends ListenerAdapter {
         return true;
     }
 
-    private void error(MessageChannel channel, Member author, String message) {
+    public static void error(MessageChannel channel, Member author, String message) {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setTitle("Oh no", null);
@@ -308,11 +318,11 @@ public class CommandManager extends ListenerAdapter {
         channel.sendMessage(eb.build()).queue();
     }
 
-    private void sendEmbed(MessageChannel channel, Member author, String title, Consumer<EmbedBuilder> embedBuilderConsumer) {
+    public static void sendEmbed(MessageChannel channel, Member author, String title, Consumer<EmbedBuilder> embedBuilderConsumer) {
         channel.sendMessage(createEmbed(author, title, embedBuilderConsumer)).queue();
     }
 
-    private MessageEmbed createEmbed(Member author, String title, Consumer<EmbedBuilder> embedBuilderConsumer) {
+    public static MessageEmbed createEmbed(Member author, String title, Consumer<EmbedBuilder> embedBuilderConsumer) {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setTitle(title, null);

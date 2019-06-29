@@ -39,7 +39,7 @@ public class VideoPlayer {
         this.main = main;
         this.channel = channel;
         this.video = video;
-        this.audioPlayer = new AudioPlayer(this.video.getfFmpegManager(), channel.getJDA());
+        this.audioPlayer = new AudioPlayer(this.video.getfFmpegManager(), main, channel);
 
         LOGGER.info("Created player in " + channel.getId());
 
@@ -160,7 +160,6 @@ public class VideoPlayer {
                 message.editMessage(embed).queue(cons -> {
                     LOGGER.info("Finished embed");
                 });
-                audioPlayer.seekTrack((seek - SECTION_DURATION) * 1000);
             }
 
             if (seek == 0) {

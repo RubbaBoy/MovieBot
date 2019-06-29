@@ -27,6 +27,7 @@ public class LocalVideo implements Video {
         try {
             var metadata = fFmpegManager.getMetadata(this.videoFile);
             this.title = metadata.get("TAG:title");
+            if (this.title == null) this.title = this.videoFile.getName();
             this.duration = Double.valueOf(metadata.get("duration")).intValue();
         } catch (IOException e) {
             LOGGER.error("There was an error while calculating video meta data " + videoFile.getAbsolutePath(), e);

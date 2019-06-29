@@ -12,6 +12,8 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.events.ReadyEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
@@ -79,6 +81,13 @@ public class Main extends ListenerAdapter {
             e.printStackTrace();
         }
 
+        reload();
+
+        new CommandManager(this);
+    }
+
+    public void reload() {
+        videos.clear();
         var videoDirectory = new File("videos");
         videoDirectory.mkdirs();
 
@@ -91,9 +100,8 @@ public class Main extends ListenerAdapter {
                 e.printStackTrace();
             }
         }
-        LOGGER.info("Got videos " + videos.size());
 
-        new CommandManager(this);
+        LOGGER.info("Got {} videos", videos.size());
     }
 
     public HashMap<String, VideoPlayer> getPlaying() {
@@ -111,14 +119,21 @@ public class Main extends ListenerAdapter {
         return null;
     }
 
-    public VideoPlayer playVideo(Guild guild, Video video) throws IOException {
-        var channelId = configManager.getValue(guild, "textchannel").orElse(null);
+    public VideoPlayer playVideo(Guild guild, Video video, Member author, MessageChannel sourceChannel) throws IOException {
+        var channelId = configManager.getValue(guild, "textchannel");
 
-        if (channelId == null) return null;
+        if (channelId.isEmpty()) {
+            CommandManager.error(sourceChannel, author, "No text channel set!");
+            return null;
+        }
 
-        var channel = guild.getTextChannelById(channelId);
-
+        var channel = guild.getTextChannelById(channelId.get());
         if (channel == null) return null;
+
+        if (configManager.getValue(guild, "voicechannel").isEmpty()) {
+            CommandManager.error(sourceChannel, author, "No voice channel set!");
+            return null;
+        }
 
         var player = new VideoPlayer(this, video, channel);
         playing.put(guild.getId(), player);
