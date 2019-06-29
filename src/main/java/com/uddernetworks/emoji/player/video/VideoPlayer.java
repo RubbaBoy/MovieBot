@@ -20,7 +20,7 @@ public class VideoPlayer {
     private static final String PAUSED_IMAGE = "https://cdn.discordapp.com/attachments/594376521175531530/594376566612688906/reel-alwin.gif";
     private static final String LOADING_IMAGE = "https://cdn.discordapp.com/attachments/594376521175531530/594376568961237011/433d83f7e481f35245f8c6bb7c7591d8.gif";
     private static Logger LOGGER = LoggerFactory.getLogger(LocalVideo.class);
-    private static final int SECTION_DURATION = 10; // Seconds;
+    private static int SECTION_DURATION = 10; // Seconds;
 
     private final TextChannel channel;
     private final Video video;
@@ -35,13 +35,16 @@ public class VideoPlayer {
     private volatile String nextImage = LOADING_IMAGE;
     private volatile int seek = -SECTION_DURATION;
 
-    // TODO: Sound
-    // TODO: Get messages from some type of data source when added to prevent more messages being sent on bot ready
     public VideoPlayer(Main main, Video video, TextChannel channel) throws IOException {
         this.main = main;
         this.channel = channel;
         this.video = video;
         this.audioPlayer = new AudioPlayer(this.video.getfFmpegManager(), main, channel);
+
+        main.getConfigManager().getValue(channel.getGuild(), "gifduration").ifPresent(duration -> {
+            SECTION_DURATION = Integer.parseInt(duration);
+            seek = -SECTION_DURATION;
+        });
 
         LOGGER.info("Created player in " + channel.getId());
 
@@ -157,9 +160,9 @@ public class VideoPlayer {
         try {
             if (message == null) {
                 this.message = channel.sendMessage(createEmbed(currentImage)).complete();
-                this.message.addReaction("\u23EF").queue();
+//                this.message.addReaction("\u23EF").queue();
                 // this.message.addReaction("\uD83D\uDD04").queue();
-                this.message.addReaction("\u23F9").queue();
+//                this.message.addReaction("\u23F9").queue();
             } else {
                 var embed = createEmbed(currentImage);
                 audioPlayer.play();

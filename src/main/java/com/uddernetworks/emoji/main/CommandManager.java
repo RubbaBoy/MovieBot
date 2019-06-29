@@ -14,6 +14,7 @@ import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.utils.PermissionUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,14 +45,8 @@ public class CommandManager extends ListenerAdapter {
         this.fFmpegManager = main.getfFmpegManager();
         (this.jda = main.getJDA()).addEventListener(this);
         this.configManager = this.main.getConfigManager();
-
-//        this.general = this.jda.getTextChannelById(591482977989427211L); // TODO: Make this configurable or something in prod
-//        this.listen = this.jda.getVoiceChannelById(591484863455166474L); // TODO: Make this configurable or something in prod
-
-//        AudioSourceManagers.registerLocalSource(this.playerManager = new DefaultAudioPlayerManager());
     }
 
-    // TODO: Temporary commands, move them to another file and make the command recognition at least semi-modular lol
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         var args = event.getMessage().getContentRaw().split("\\s+", 3);
@@ -71,9 +66,10 @@ public class CommandManager extends ListenerAdapter {
                                     "**dem list** Displays the available videos\n" +
                                     "**dem play [video name]** Plays the given video\n" +
                                     "**dem request [video url]** Requests for a video to be uploaded. If approved, the user will be DM'd.\n" +
-                                    "**dem pause** Pauses current playing video\n" +
-                                    "**dem resume** Resumes current playing video\n" +
-                                    "**dem stop** Stops current playing video"
+//                                    "**dem pause** Pauses current playing video\n" +
+//                                    "**dem resume** Resumes current playing video\n" +
+                                    "**dem stop** Stops current playing video\n" +
+                                    "**dem setgifduration [seconds]** Sets the duration in seconds each gif displayed is. Default is 10"
                             , false);
 
                     if (PermissionUtil.checkPermission(author, Permission.ADMINISTRATOR))
@@ -132,7 +128,7 @@ public class CommandManager extends ListenerAdapter {
                                 player.getChannel().getAsMention() + "\n\nEnjoy the show!"))).queue();
 
                 break;
-            case "request": // TODO Finish download
+            case "request":
                 if (checkCanPlay(channel, author)) return;
                 var userId = author.getUser().getIdLong();
 
@@ -145,39 +141,51 @@ public class CommandManager extends ListenerAdapter {
                 }
 
                 break;
-            case "pause":
+            case "setgifduration":
                 if (checkCanPlay(channel, author)) return;
-                player = this.main.getPlaying().get(guild.getId());
 
-                if (player == null) {
-                    error(channel, author, "There is no video being played in this server. Try `dem play`");
+                if (!StringUtils.isNumeric(args[2])) {
+                    error(channel, author, "The seconds must be a number.");
                     return;
                 }
 
-                if (player.getState() == VideoPlayerState.PAUSED) {
-                    error(channel, author, "This video is already paused");
-                    return;
-                }
+                this.configManager.setValue(guild, "gifduration", args[2]);
 
-                player.setState(VideoPlayerState.PAUSED);
+                sendEmbed(channel, author, "Set gif duration", embedBuilder -> embedBuilder.setDescription("Set the gif duration to " + args[2] + " seconds."));
                 break;
-            case "resume":
-                if (checkCanPlay(channel, author)) return;
-                player = this.main.getPlaying().get(guild.getId());
-
-                if (player == null) {
-                    error(channel, author, "There is no video being played in this server. Try `dem play`");
-                    return;
-                }
-
-                if (player.getState() == VideoPlayerState.PLAYING) {
-                    error(channel, author, "This video is already playing");
-                    return;
-                }
-
-                player.setState(VideoPlayerState.PLAYING);
-
-                break;
+//            case "pause":
+//                if (checkCanPlay(channel, author)) return;
+//                player = this.main.getPlaying().get(guild.getId());
+//
+//                if (player == null) {
+//                    error(channel, author, "There is no video being played in this server. Try `dem play`");
+//                    return;
+//                }
+//
+//                if (player.getState() == VideoPlayerState.PAUSED) {
+//                    error(channel, author, "This video is already paused");
+//                    return;
+//                }
+//
+//                player.setState(VideoPlayerState.PAUSED);
+//                break;
+//            case "resume":
+//                if (checkCanPlay(channel, author)) return;
+//                player = this.main.getPlaying().get(guild.getId());
+//
+//                if (player == null) {
+//                    error(channel, author, "There is no video being played in this server. Try `dem play`");
+//                    return;
+//                }
+//
+//                if (player.getState() == VideoPlayerState.PLAYING) {
+//                    error(channel, author, "This video is already playing");
+//                    return;
+//                }
+//
+//                player.setState(VideoPlayerState.PLAYING);
+//
+//                break;
             case "stop":
                 if (checkCanPlay(channel, author)) return;
                 player = this.main.getPlaying().get(guild.getId());
@@ -253,6 +261,9 @@ public class CommandManager extends ListenerAdapter {
                 this.main.reload();
 
                 sendEmbed(channel, author, "Reload Complete", embedBuilder -> embedBuilder.setDescription("Reloaded videos!"));
+                break;
+            default:
+                error(channel, author, "Hmm, I couldn't understand what you were saying. Do `dem help` to see what you can do.");
                 break;
         }
     }
