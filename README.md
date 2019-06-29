@@ -2,7 +2,7 @@
     <img src="branding/Banner.png">
 </h1>
 
-Discord is a place that brings people together to play games, chat, and now with Discord Movie Bot you can watch movies with your friends right in the Discord app. Brought to you by the creator of the [best IDE](https://github.com/MSPaintIDE/MSPaintIDE) around, [@RubbaBoy](https://github.com/RubbaBoy) and a developer know one knows, [@AL1L](https://al1l.com) useing sophisticated audio and video technology we bring our [Discord Hack Week](https://blog.discordapp.com/discord-community-hack-week-build-and-create-alongside-us-6b2a7b7bba33) submission and your favorite movies and videos straight to the Discord client.
+Discord is a place that brings people together to play games, chat, and now with Discord Movie Bot you can watch movies with your friends right in the Discord app. Brought to you by the creator of the [best IDE](https://github.com/MSPaintIDE/MSPaintIDE) around, [@RubbaBoy](https://github.com/RubbaBoy) and a developer know one knows, [@AL1L](https://al1l.com) using sophisticated audio and video technology we bring our [Discord Hack Week](https://blog.discordapp.com/discord-community-hack-week-build-and-create-alongside-us-6b2a7b7bba33) submission and your favorite movies and videos straight to the Discord client.
 
 ## How does it work?
 
