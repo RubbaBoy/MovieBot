@@ -135,7 +135,7 @@ public class VideoPlayer {
             return;
         }
 
-        if(this.state == VideoPlayerState.PAUSED) {
+        if (this.state == VideoPlayerState.PAUSED) {
             this.audioPlayer.pauseTrack();
             if (loop) Thread.sleep(250);
             CompletableFuture.runAsync(this::nextSet);
@@ -197,5 +197,9 @@ public class VideoPlayer {
 
     public TextChannel getChannel() {
         return channel;
+    }
+
+    public Message getMessage() {
+        return message;
     }
 }

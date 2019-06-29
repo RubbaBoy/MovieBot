@@ -84,6 +84,7 @@ public class Main extends ListenerAdapter {
         reload();
 
         new CommandManager(this);
+        new ReactionListener(this);
     }
 
     public void reload() {
