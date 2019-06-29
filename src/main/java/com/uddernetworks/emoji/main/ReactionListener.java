@@ -58,6 +58,8 @@ public class ReactionListener extends ListenerAdapter {
             }
         } else if (reaction.equals("\u23F9")) {
             player.setState(VideoPlayerState.END);
+        } else if (reaction.equals("\uD83D\uDD04")) {
+            player.startFromBeginning();
         }
     }
 

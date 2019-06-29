@@ -153,6 +153,7 @@ public class VideoPlayer {
             if (message == null) {
                 this.message = channel.sendMessage(createEmbed(currentImage)).complete();
                 this.message.addReaction("\u23EF").queue();
+                // this.message.addReaction("\uD83D\uDD04").queue();
                 this.message.addReaction("\u23F9").queue();
             } else {
                 var embed = createEmbed(currentImage);
@@ -201,5 +202,15 @@ public class VideoPlayer {
 
     public Message getMessage() {
         return message;
+    }
+
+    public void seekTo(int seek) {
+        this.seek = seek;
+        this.audioPlayer.seekTrack((seek - SECTION_DURATION) * 1000);
+        nextSet(false);
+    }
+
+    public void startFromBeginning() {
+        seekTo(-SECTION_DURATION);
     }
 }
