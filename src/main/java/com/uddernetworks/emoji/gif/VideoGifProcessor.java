@@ -27,7 +27,7 @@ public class VideoGifProcessor {
             this.fFmpegManager.createJob(new FFmpegBuilder()
                     .setInput(video.getAbsolutePath())
                     .addOutput(outFile.getAbsolutePath())
-                    .addExtraArgs("-r", "10", "-hide_banner", "-vf", "scale=480:-1", "-ss", String.valueOf(offset), "-t", String.valueOf(duration))
+                    .addExtraArgs("-r", "10", "-hide_banner", "-vf", "scale=320:-1", "-ss", String.valueOf(offset), "-t", String.valueOf(duration))
                     .done());
             return outFile;
         });

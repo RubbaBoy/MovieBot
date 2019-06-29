@@ -22,15 +22,22 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class CommandManager extends ListenerAdapter {
 
     private static Logger LOGGER = LoggerFactory.getLogger(AudioPlayer.class);
+
+    private static final long REQUEST_TEXT_CHANNEL = 594355652277698570L;
+
     private FFmpegManager fFmpegManager;
     private JDA jda;
     private Main main;
     private ConfigManager configManager;
+    private Map<Long, Long> requestTimeout = new HashMap<>();
 
     public CommandManager(Main main) {
         this.main = main;
@@ -63,7 +70,7 @@ public class CommandManager extends ListenerAdapter {
                             "**dem help** Shows this help menu\n" +
                                     "**dem list** Displays the available videos\n" +
                                     "**dem play [video name]** Plays the given video\n" +
-                                    "**dem download [video url]** Plays the given video\n" +
+                                    "**dem request [video url]** Requests for a video to be uploaded. If approved, the user will be tagged.\n" +
                                     "**dem pause** Pauses current playing video\n" +
                                     "**dem resume** Resumes current playing video\n" +
                                     "**dem stop** Stops current playing video"
@@ -125,13 +132,16 @@ public class CommandManager extends ListenerAdapter {
                                 player.getChannel().getAsMention() + "\n\nEnjoy the show!"))).queue();
 
                 break;
-            case "download":
+            case "request": // TODO Finish download
                 if (checkCanPlay(channel, author)) return;
-                try {
-                    var url = new URL(args[2]);
-                } catch (MalformedURLException e) {
-                    error(channel, author, "Please specify a valid URL");
-                    return;
+                var userId = author.getUser().getIdLong();
+
+                if (!requestTimeout.containsKey(userId) || requestTimeout.get(userId) + TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS) < System.currentTimeMillis()) {
+                    requestTimeout.put(userId, System.currentTimeMillis());
+
+                    submitRequest(author, guild, args[2]);
+                } else {
+                    error(channel, author, "There is a 1 hour cooldown on video requests.");
                 }
 
                 break;
@@ -235,6 +245,21 @@ public class CommandManager extends ListenerAdapter {
                 sendEmbed(channel, author, "Set text channel", embedBuilder -> embedBuilder.setDescription("The text channel has been set to " + textChannel.getName()));
                 break;
         }
+    }
+
+    private void submitRequest(Member author, Guild guild, String arg) {
+        var submitChannel = this.jda.getTextChannelById(REQUEST_TEXT_CHANNEL);
+
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setTitle("Video Request", null);
+        eb.setColor(new Color(0xe91e63));
+        eb.setDescription("Video request by " + author.getUser().getName() + "#" + author.getUser().getDiscriminator() +
+                " from the guild \"" + guild.getName().replaceAll("<@?!?&?#?([0-9]{17,18})>", "$1") + "\" (ID: " + guild.getId() + ")");
+
+        eb.addField("Requested Video", arg.replaceAll("<@?!?&?#?([0-9]{17,18})>", "$1"), false);
+
+        submitChannel.sendMessage(eb.build()).queue();
     }
 
     private boolean checkAdmin(MessageChannel channel, Member author) {
