@@ -14,23 +14,22 @@ public class LocalVideo implements Video {
     private static Logger LOGGER = LoggerFactory.getLogger(LocalVideo.class);
 
     private String title;
-    private String description;
     private File videoFile;
     private int duration = 0;
     private FFmpegManager fFmpegManager;
     private VideoGifProcessor videoGifProcessor;
 
-    public LocalVideo(FFmpegManager fFmpegManager, VideoGifProcessor videoGifProcessor, File videoFile, String title, String description) {
-        this.title = title;
-        this.description = description;
+    public LocalVideo(FFmpegManager fFmpegManager, VideoGifProcessor videoGifProcessor, File videoFile) {
         this.videoFile = videoFile;
         this.fFmpegManager = fFmpegManager;
         this.videoGifProcessor = videoGifProcessor;
 
         try {
-            this.duration = Double.valueOf(fFmpegManager.getProperty("duration", this.videoFile)).intValue();
+            var metadata = fFmpegManager.getMetadata(this.videoFile);
+            this.title = metadata.get("TAG:title");
+            this.duration = Double.valueOf(metadata.get("duration")).intValue();
         } catch (IOException e) {
-            LOGGER.error("There was an error while calculating the duration of the video " + videoFile.getAbsolutePath(), e);
+            LOGGER.error("There was an error while calculating video meta data " + videoFile.getAbsolutePath(), e);
         }
     }
 
@@ -52,11 +51,6 @@ public class LocalVideo implements Video {
     @Override
     public String getTitle() {
         return title;
-    }
-
-    @Override
-    public String getDescription() {
-        return description;
     }
 
     @Override

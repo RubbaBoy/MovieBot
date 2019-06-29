@@ -1,5 +1,6 @@
 package com.uddernetworks.emoji.player.video;
 
+import com.uddernetworks.emoji.main.Main;
 import com.uddernetworks.emoji.player.audio.AudioPlayer;
 import com.uddernetworks.emoji.utils.Thread;
 import net.dv8tion.jda.core.EmbedBuilder;
@@ -21,6 +22,7 @@ public class VideoPlayer {
 
     private final TextChannel channel;
     private final Video video;
+    private final Main main;
 
     private AudioPlayer audioPlayer;
     private Message message;
@@ -33,7 +35,8 @@ public class VideoPlayer {
 
     // TODO: Sound
     // TODO: Get messages from some type of data source when added to prevent more messages being sent on bot ready
-    public VideoPlayer(Video video, TextChannel channel) throws IOException {
+    public VideoPlayer(Main main, Video video, TextChannel channel) throws IOException {
+        this.main = main;
         this.channel = channel;
         this.video = video;
         this.audioPlayer = new AudioPlayer(this.video.getfFmpegManager(), channel.getJDA());
@@ -46,6 +49,7 @@ public class VideoPlayer {
     private MessageEmbed createEmbed(String image) {
         var embed = new EmbedBuilder();
 
+        /*
         int hours = (int) Math.floor((double) video.getLength() / 60 / 60);
         int mins = (int) Math.floor(((double) video.getLength() - hours * 60) / 60);
         int secs = video.getLength() - mins * 60;
@@ -58,13 +62,17 @@ public class VideoPlayer {
 
         if (hours > 0) totalTime = hours + ":" + totalTime;
         if (curHours > 0) seekTime = curHours + ":" + seekTime;
+         */
 
-        var prog = (double) seek / video.getLength();
+        var prog = (double) (seek - SECTION_DURATION) / video.getLength();
 
         StringBuilder playBar = new StringBuilder();
 
-        for (double i = 0; i < 1; i += 0.1) {
-            if (prog >= i && prog < i + 0.1) {
+        playBar.append(state == VideoPlayerState.PLAYING ? "\u25B6" : "\u23F8");
+        playBar.append(" ");
+
+        for (double i = 0; i < 1; i += 0.05) {
+            if (prog >= i && prog < i + 0.05) {
                 playBar.append("\u25CF");
             } else {
                 playBar.append("\u2500");
@@ -72,7 +80,7 @@ public class VideoPlayer {
         }
 
         embed.setTitle(video.getTitle());
-        embed.setDescription(seekTime + " " + playBar + " " + totalTime);
+        embed.setFooter(playBar.toString(), null);
         if (image != null) embed.setImage(image);
         embed.setColor(0);
 
@@ -118,7 +126,19 @@ public class VideoPlayer {
     private void nextSet(boolean loop) {
         long start = System.currentTimeMillis();
 
-        if (seek >= this.video.getLength()) {
+        if (seek >= this.video.getLength() || this.state == VideoPlayerState.END) {
+            this.state = VideoPlayerState.END;
+            this.audioPlayer.pauseTrack();
+            this.message.delete().queue();
+            this.audioPlayer.disconnect();
+            this.main.removePlayer(this);
+            return;
+        }
+
+        if(this.state == VideoPlayerState.PAUSED) {
+            this.audioPlayer.pauseTrack();
+            if (loop) Thread.sleep(250);
+            CompletableFuture.runAsync(this::nextSet);
             return;
         }
 
@@ -132,12 +152,15 @@ public class VideoPlayer {
         try {
             if (message == null) {
                 this.message = channel.sendMessage(createEmbed(currentImage)).complete();
+                this.message.addReaction("\u23EF").queue();
+                this.message.addReaction("\u23F9").queue();
             } else {
                 var embed = createEmbed(currentImage);
                 audioPlayer.play();
                 message.editMessage(embed).queue(cons -> {
                     LOGGER.info("Finished embed");
                 });
+                audioPlayer.seekTrack((seek - SECTION_DURATION) * 1000);
             }
 
             if (seek == 0) {
@@ -173,7 +196,7 @@ public class VideoPlayer {
         }
     }
 
-    public void joinVoice(VoiceChannel channel) {
-        // TODO
+    public TextChannel getChannel() {
+        return channel;
     }
 }

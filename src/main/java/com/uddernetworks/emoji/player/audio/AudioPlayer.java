@@ -31,9 +31,6 @@ public class AudioPlayer extends ListenerAdapter {
 
     private final AudioPlayerManager playerManager;
 
-    // TODO: Unnecessary if there is one AudioPlayer per guild
-    private final Map<Long, GuildMusicManager> musicManagers = new HashMap<>();
-
     private FFmpegManager fFmpegManager;
     private JDA jda;
     private TextChannel general;
@@ -51,32 +48,21 @@ public class AudioPlayer extends ListenerAdapter {
         AudioSourceManagers.registerLocalSource(this.playerManager = new DefaultAudioPlayerManager());
     }
 
-    // TODO: Temporary commands, move them to another file and make the command recognition at least semi-modular lol
-    @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
-        var command = event.getMessage().getContentRaw();
-        Guild guild = event.getGuild();
+    public VoiceChannel getVoiceChannel() {
+        return listen;
+    }
 
-        if (guild != null) {
-            switch (command.toLowerCase()) {
-                case "dem play":
-                    initialPlay(Main.getTestVideo());
-                    break;
-                case "dem pause":
-                    pauseTrack();
-                    break;
-                case "dem resume":
-                    resumeTrack();
-                    break;
-            }
-        }
+    public void disconnect() {
+        this.listen.getGuild().getAudioManager().closeAudioConnection();
+        this.musicManager = null;
+        this.currentTrack = null;
     }
 
     private CompletableFuture<File> generateAudio(Video video) {
         return CompletableFuture.supplyAsync(() -> {
             var outDir = new File("audio");
             outDir.mkdirs();
-            var outFile = new File(outDir, video.getVideoFile().getName().hashCode() + ".mp3");
+            var outFile = new File(outDir, video.getVideoFile().getName() + ".mp3");
             if (outFile.exists()) {
                 LOGGER.info("{} already exists, skipping!", outFile.getAbsolutePath());
                 return outFile;
@@ -146,12 +132,9 @@ public class AudioPlayer extends ListenerAdapter {
     }
 
     private synchronized GuildMusicManager getGuildAudioPlayer(Guild guild) {
-        long guildId = Long.parseLong(guild.getId());
-        GuildMusicManager musicManager = musicManagers.get(guildId);
 
         if (musicManager == null) {
             musicManager = new GuildMusicManager(playerManager);
-            musicManagers.put(guildId, musicManager);
         }
 
         guild.getAudioManager().setSendingHandler(musicManager.getSendHandler());

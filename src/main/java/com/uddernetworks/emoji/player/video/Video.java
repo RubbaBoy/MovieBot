@@ -16,8 +16,6 @@ public interface Video {
 
     String getTitle();
 
-    String getDescription();
-
     /**
      * Returns the length of the video, in seconds.
      *
