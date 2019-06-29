@@ -10,6 +10,14 @@ Join the official Movie Bot Discord server [here](https://discord.gg/fJWYk8d)
 
 ![img](https://rubbaboy.me/images/nymr7o3)
 
+
+
+![](https://rubbaboy.me/images/97w2jyl)
+
+
+
+![](https://rubbaboy.me/images/7dktv43)
+
 ## How does it work?
 
 Thanks for letting me ask you your behalf, here's how:
@@ -22,7 +30,7 @@ Thanks for letting me ask you your behalf, here's how:
 - Now you're ready to watch movies!
 - Run `dem list` to see what videos we have available. Don't like the selection? run `dem request [video url]` and we'll get back to you.
 - Once you have your eyes locked on a video you want to eat popcorn to, run `dem play [video name]`, join the voice channel, set back, eat your snacks and enjoy the show!
- 
+
 
 ## Getting Technical
 
