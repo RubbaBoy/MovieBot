@@ -24,9 +24,14 @@ public class FFmpegManager {
     private FFmpegExecutor executor;
 
     public FFmpegManager() throws IOException {
-        var ffmpegBin = findFFmpegBin().getAbsolutePath();
-        LOGGER.info("Found ffmpeg bin location, {}", ffmpegBin);
-        this.executor = new FFmpegExecutor(new FFmpeg(ffmpegBin + "\\ffmpeg.exe"), new FFprobe(ffmpegBin + "\\ffprobe.exe"));
+        if (System.getProperty("os.name").contains("Windows")) {
+            var ffmpegBin = findFFmpegBin().getAbsolutePath();
+            LOGGER.info("Found ffmpeg bin location, {}", ffmpegBin);
+            this.executor = new FFmpegExecutor(new FFmpeg(ffmpegBin + "\\ffmpeg.exe"), new FFprobe(ffmpegBin + "\\ffprobe.exe"));
+        } else {
+            LOGGER.info("Using hardcoded ffmpeg/ffprobe locations, if you want it different, make a PR and fix it.");
+            this.executor = new FFmpegExecutor(new FFmpeg("/usr/bin/ffmpeg"), new FFprobe("/usr/bin/ffprobe"));
+        }
     }
 
     public void createJob(FFmpegBuilder builder) {
