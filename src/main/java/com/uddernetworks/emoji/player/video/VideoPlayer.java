@@ -17,6 +17,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class VideoPlayer {
 
+    private static final String PAUSED_IMAGE = "https://cdn.discordapp.com/attachments/594376521175531530/594376566612688906/reel-alwin.gif";
+    private static final String LOADING_IMAGE = "https://cdn.discordapp.com/attachments/594376521175531530/594376568961237011/433d83f7e481f35245f8c6bb7c7591d8.gif";
     private static Logger LOGGER = LoggerFactory.getLogger(LocalVideo.class);
     private static final int SECTION_DURATION = 10; // Seconds;
 
@@ -30,7 +32,7 @@ public class VideoPlayer {
 
     // Edited in multiple threads
     private volatile String currentImage;
-    private volatile String nextImage = "https://media1.giphy.com/media/2WjpfxAI5MvC9Nl8U7/source.gif";
+    private volatile String nextImage = LOADING_IMAGE;
     private volatile int seek = -SECTION_DURATION;
 
     // TODO: Sound
@@ -93,6 +95,9 @@ public class VideoPlayer {
         seek = currentSeek - SECTION_DURATION;
         nextImage = currentImage;
         nextSet(false);
+
+        if (state == VideoPlayerState.PAUSED)
+            message.editMessage(createEmbed(PAUSED_IMAGE)).queue(cons -> LOGGER.info("Finished paused embed"));
     }
 
     public VideoPlayerState getState() {
